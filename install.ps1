@@ -6,24 +6,33 @@ function Test-Command {
     return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
+# Check git
+if (-not (Test-Command "git")) {
+    Write-Host "❌ Git not found. Install Git first."
+    exit 1
+}
+
 # Check npm
 if (-not (Test-Command "npm")) {
-    Write-Host "❌ npm not found. Please install Node.js first."
+    Write-Host "❌ npm not found. Install Node.js first."
     exit 1
 }
 
 Write-Host "✅ npm detected"
+Write-Host "✅ git detected"
 
-# Root directory
-$rootDir = if ($PSScriptRoot) { $PSScriptRoot } else { Get-Location }
-$backendDir = Join-Path $rootDir "backend"
-$envFile = Join-Path $backendDir ".env"
+# Install directory
+$installDir = Join-Path $HOME "quiz-web"
 
-# Check backend folder
-if (!(Test-Path $backendDir)) {
-    Write-Host "❌ backend folder not found."
-    exit 1
+if (!(Test-Path $installDir)) {
+    Write-Host "Cloning repository..."
+    git clone https://github.com/lakshminsjaanu-blip/quiz-web.git $installDir
 }
+
+Set-Location $installDir
+
+$backendDir = Join-Path $installDir "backend"
+$envFile = Join-Path $backendDir ".env"
 
 Write-Host ""
 Write-Host "Configure MySQL connection (Press Enter for default values)"
@@ -45,7 +54,6 @@ if ([string]::IsNullOrWhiteSpace($dbName)) { $dbName = "quiz_system" }
 $port = Read-Host "Backend port [5000]"
 if ([string]::IsNullOrWhiteSpace($port)) { $port = "5000" }
 
-# Create .env content
 $envContent = @"
 DB_HOST=$dbHost
 DB_USER=$dbUser
@@ -54,19 +62,9 @@ DB_NAME=$dbName
 PORT=$port
 "@
 
-# Write env file
-if (Test-Path $envFile) {
-    $overwrite = Read-Host "⚠ backend/.env exists. Overwrite? (y/N)"
-    if ($overwrite -match "^[Yy]$") {
-        $envContent | Set-Content $envFile -Encoding ascii
-        Write-Host "✅ .env updated"
-    } else {
-        Write-Host "Keeping existing .env"
-    }
-} else {
-    $envContent | Set-Content $envFile -Encoding ascii
-    Write-Host "✅ .env created"
-}
+$envContent | Set-Content $envFile -Encoding ascii
+
+Write-Host "✅ .env created"
 
 Write-Host ""
 Write-Host "Installing backend dependencies..."
@@ -74,10 +72,10 @@ Write-Host "Installing backend dependencies..."
 Set-Location $backendDir
 npm install
 
-Set-Location $rootDir
+Set-Location $installDir
 
 Write-Host ""
 Write-Host "✅ Installation completed!"
 Write-Host ""
-Write-Host "Start server with:"
+Write-Host "Run server with:"
 Write-Host "node backend/server.js"
