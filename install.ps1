@@ -15,7 +15,7 @@ if (-not (Test-Command "npm")) {
 Write-Host "✅ npm detected"
 
 # Root directory
-$rootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$rootDir = if ($PSScriptRoot) { $PSScriptRoot } else { Get-Location }
 $backendDir = Join-Path $rootDir "backend"
 $envFile = Join-Path $backendDir ".env"
 
