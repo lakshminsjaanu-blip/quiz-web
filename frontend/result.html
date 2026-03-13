@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result - Quiz System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="subjects.html" class="logo">QuizMaster</a>
+        <ul class="nav-links">
+            <li><a href="results.html">View History</a></li>
+            <li><a href="subjects.html">Back to Subjects</a></li>
+        </ul>
+    </nav>
+    <div class="container text-center" style="max-width: 600px; margin-top: 4rem;">
+        <div class="card">
+            <h2>Quiz Completed!</h2>
+            <p id="subjectDisplay" style="font-size: 1.2rem; margin-top: 1rem;">Subject</p>
+            <div class="score-display">
+                <span id="scoreVal">0</span> / <span id="totalVal">0</span>
+            </div>
+            <p id="message" style="margin-bottom: 2rem; font-weight: 500;"></p>
+
+            <div style="margin-bottom: 2rem;">
+                <a href="subjects.html" class="btn" style="margin-right: 1rem;">Take Another Quiz</a>
+                <a href="results.html" class="btn btn-secondary">View Past Results</a>
+            </div>
+            <button id="downloadBtn" class="btn" style="background-color: #10b981; color: white; width: 100%;">Download
+                Result Certificate (CSV)</button>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        checkAuth(); // Ensure user is logged in
+
+        const lastScoreStr = sessionStorage.getItem('lastScore');
+        if (!lastScoreStr) {
+            window.location.href = 'subjects.html';
+        }
+
+        const lastScore = JSON.parse(lastScoreStr);
+        document.getElementById('subjectDisplay').textContent = lastScore.subject;
+        document.getElementById('scoreVal').textContent = lastScore.score;
+        document.getElementById('totalVal').textContent = lastScore.total;
+
+        const percentage = (lastScore.score / lastScore.total) * 100;
+        const msg = document.getElementById('message');
+        if (percentage === 100) {
+            msg.textContent = "Perfect score! Outstanding work!";
+            msg.style.color = 'var(--success)';
+        } else if (percentage >= 70) {
+            msg.textContent = "Great job! Keep it up!";
+            msg.style.color = 'var(--primary-color)';
+        } else if (percentage >= 50) {
+            msg.textContent = "Good effort, but there is room for improvement.";
+            msg.style.color = '#eab308';
+        } else {
+            msg.textContent = "You need to study more.";
+            msg.style.color = 'var(--danger)';
+        }
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const user = JSON.parse(localStorage.getItem('user'));
+
+            // CSV Content
+            let csvContent = "Quiz Result Certificate\n";
+            csvContent += `User,${user.name}\n`;
+            csvContent += `Email,${user.email}\n`;
+            csvContent += `Subject,${lastScore.subject}\n`;
+            csvContent += `Score,${lastScore.score}\n`;
+            csvContent += `Total,${lastScore.total}\n`;
+            csvContent += `Percentage,${((lastScore.score / lastScore.total) * 100).toFixed(2)}%\n`;
+            csvContent += `Date,${new Date().toLocaleString()}\n`;
+
+            // Add UTF-8 BOM for Excel compatibility
+            const BOM = "\uFEFF";
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `${lastScore.subject}_Result.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz - Quiz System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="subjects.html" class="logo">QuizMaster</a>
+        <ul class="nav-links">
+            <li><a href="subjects.html">Back to Subjects</a></li>
+        </ul>
+    </nav>
+    <div class="container" style="max-width: 800px; margin-top: 2rem;">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 id="subjectTitle">Quiz</h2>
+                <span
+                    style="background: var(--primary-color); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-weight: bold;">
+                    <span id="qCount">0</span> Questions
+                </span>
+            </div>
+
+            <div id="alertBox" class="alert hidden"></div>
+
+            <div id="loading" class="text-center">Loading questions...</div>
+
+            <form id="quizForm" class="hidden">
+                <div id="questionsContainer"></div>
+                <div class="text-center mt-4 pt-4 border-top">
+                    <button type="submit" class="btn btn-block" style="font-size: 1.2rem; padding: 1rem;">Submit
+                        Quiz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        checkAuth(); // Ensure user is logged in
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const quizId = urlParams.get('id');
+        const subjectName = urlParams.get('name');
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (!quizId) {
+            window.location.href = 'subjects.html';
+        }
+
+        document.getElementById('subjectTitle').textContent = `${subjectName} Quiz`;
+
+        async function loadQuestions() {
+            try {
+                const res = await fetch(`http://localhost:5000/quiz/${quizId}`);
+                const questions = await res.json();
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('quizForm').classList.remove('hidden');
+                document.getElementById('qCount').textContent = questions.length;
+
+                const container = document.getElementById('questionsContainer');
+
+                questions.forEach((q, index) => {
+                    const block = document.createElement('div');
+                    block.className = 'question-block';
+
+                    const qTitle = document.createElement('h4');
+                    qTitle.textContent = `${index + 1}. ${q.question}`;
+
+                    const list = document.createElement('ul');
+                    list.className = 'options-list';
+
+                    const options = [q.option1, q.option2, q.option3, q.option4];
+                    options.forEach((opt, optIdx) => {
+                        const li = document.createElement('li');
+                        const label = document.createElement('label');
+
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = `question_${q.question_id}`;
+                        radio.value = opt;
+                        radio.required = true;
+
+                        const text = document.createTextNode(opt);
+
+                        label.appendChild(radio);
+                        label.appendChild(text);
+                        li.appendChild(label);
+                        list.appendChild(li);
+                    });
+
+                    block.appendChild(qTitle);
+                    block.appendChild(list);
+                    container.appendChild(block);
+                });
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading').textContent = 'Failed to load questions.';
+            }
+        }
+
+        document.getElementById('quizForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Gather answers
+            const formData = new FormData(e.target);
+            const answers = {};
+            for (let [key, value] of formData.entries()) {
+                const qId = key.split('_')[1];
+                answers[qId] = value;
+            }
+
+            try {
+                const res = await fetch('http://localhost:5000/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        quizId: parseInt(quizId),
+                        answers: answers
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    // Redirect to results with score
+                    sessionStorage.setItem('lastScore', JSON.stringify({ score: data.score, total: data.total, subject: subjectName }));
+                    window.location.href = 'result.html';
+                } else {
+                    const alertBox = document.getElementById('alertBox');
+                    alertBox.textContent = data.error || 'Failed to submit';
+                    alertBox.className = 'alert alert-error';
+                    alertBox.classList.remove('hidden');
+                    window.scrollTo(0, 0);
+                }
+            } catch (err) {
+                console.error(err);
+                const alertBox = document.getElementById('alertBox');
+                alertBox.textContent = 'Server error during submission.';
+                alertBox.className = 'alert alert-error';
+                alertBox.classList.remove('hidden');
+                window.scrollTo(0, 0);
+            }
+        });
+
+        loadQuestions();
+    </script>
+</body>
+
+</html>

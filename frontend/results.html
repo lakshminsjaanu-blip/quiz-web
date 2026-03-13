@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Results History - Quiz System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="subjects.html" class="logo">QuizMaster</a>
+        <ul class="nav-links">
+            <li><a href="subjects.html">Back to Subjects</a></li>
+            <li><a href="#" id="logoutBtn" style="color: var(--danger);">Logout</a></li>
+        </ul>
+    </nav>
+    <div class="container" style="max-width: 800px; margin-top: 2rem;">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="margin: 0;">My Quiz History</h2>
+                <button id="exportBtn" class="btn hidden" style="background-color: var(--success); color: white;">Export
+                    to CSV</button>
+            </div>
+            <div id="loading" class="text-center">Loading results...</div>
+            <div id="resultsList" class="hidden">
+                <!-- History items will appear here -->
+            </div>
+            <div id="emptyMessage" class="hidden text-center" style="padding: 2rem;">
+                <p>You haven't taken any quizzes yet.</p>
+                <a href="subjects.html" class="btn mt-4">Start a Quiz</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        checkAuth(); // Ensure user is logged in
+
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
+
+        let globalHistory = [];
+
+        async function fetchHistory() {
+            try {
+                const res = await fetch(`http://localhost:5000/results/${user.id}`);
+                const history = await res.json();
+                globalHistory = history;
+
+                document.getElementById('loading').classList.add('hidden');
+
+                if (history.length === 0) {
+                    document.getElementById('emptyMessage').classList.remove('hidden');
+                } else {
+                    const list = document.getElementById('resultsList');
+                    list.classList.remove('hidden');
+                    document.getElementById('exportBtn').classList.remove('hidden');
+
+                    history.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'history-item';
+
+                        const sub = document.createElement('div');
+                        sub.innerHTML = `<strong>${item.subject_name}</strong>`;
+
+                        const score = document.createElement('div');
+                        score.innerHTML = `<span style="font-weight: bold; color: var(--primary-color);">Score: ${item.score} / 10</span>`;
+
+                        div.appendChild(sub);
+                        div.appendChild(score);
+                        list.appendChild(div);
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading').textContent = 'Failed to load history.';
+            }
+        }
+
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            if (globalHistory.length === 0) return;
+
+            let csvContent = "Subject,Score,Total\n";
+
+            globalHistory.forEach(item => {
+                // Escape commas or quotes in subject name if necessary
+                let subject = item.subject_name.replace(/"/g, '""');
+                csvContent += `"${subject}",${item.score},10\n`;
+            });
+
+            // Add UTF-8 BOM for Excel compatibility
+            const BOM = "\uFEFF";
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "quiz_results.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        });
+
+        fetchHistory();
+    </script>
+</body>
+
+</html>
