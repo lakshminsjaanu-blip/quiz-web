@@ -1,86 +1,236 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subjects - Quiz System</title>
+    <title>Dashboard - QuizReg</title>
     <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
     <nav class="navbar">
-        <a href="index.html" class="logo">QuizMaster</a>
+        <a href="index.html" class="brand">
+            <span class="brand-badge">Q</span>
+            QuizReg
+        </a>
         <ul class="nav-links">
-            <li style="font-weight: 500;">Welcome, <span id="userName">User</span></li>
-            <li><a href="results.html">results</a></li>
-            <li><a href="#" id="logoutBtn" style="color: var(--danger);">Logout</a></li>
+            <li>Welcome, <span id="userName">User</span></li>
+            <li><a href="results.html">Results</a></li>
+            <li><a href="#" id="logoutBtn" class="btn btn-outline">Logout</a></li>
+            <li>
+                <button type="button" class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                        <path d="M12 3a1 1 0 0 1 1 1v2.2a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1zm0 13.8a4.8 4.8 0 1 0 0-9.6 4.8 4.8 0 0 0 0 9.6zM4.6 7.4a1 1 0 0 1 1.4 0l1.5 1.5a1 1 0 1 1-1.4 1.4L4.6 8.8a1 1 0 0 1 0-1.4zm12.9 7.2a1 1 0 0 1 1.4 0l1.5 1.5a1 1 0 0 1-1.4 1.4l-1.5-1.5a1 1 0 0 1 0-1.4zM3 12a1 1 0 0 1 1-1h2.2a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1zm13.8 0a1 1 0 0 1 1-1H20a1 1 0 1 1 0 2h-2.2a1 1 0 0 1-1-1zM4.6 16.6a1 1 0 0 1 1.4 0l1.5-1.5a1 1 0 0 1 1.4 1.4l-1.5 1.5a1 1 0 0 1-1.4-1.4zm12.9-7.2a1 1 0 0 1 1.4 0 1 1 0 0 1 0 1.4l-1.5 1.5a1 1 0 1 1-1.4-1.4l1.5-1.5z" fill="currentColor"></path>
+                    </svg>
+                    <span class="sr-only">Toggle theme</span>
+                </button>
+            </li>
         </ul>
     </nav>
-    <div class="container">
-        <div class="text-center mb-4 mt-4">
-            <h2>Select a Subject</h2>
-            <p>Choose one of the 10 subjects below to start your quiz.</p>
-        </div>
-        <div id="loading" class="text-center">Loading subjects...</div>
-        <div id="subjectGrid" class="grid grid-cols-2 hidden">
-            <!-- Subjects will be loaded here dynamically -->
-        </div>
-    </div>
+
+    <main class="page">
+        <section class="welcome-card animate-in">
+            <div class="welcome-left">
+                <div class="avatar" id="avatarInitials">QR</div>
+                <div>
+                    <h2>Welcome back, <span id="welcomeName">User</span>!</h2>
+                    <p class="muted">Current Rank: <strong>Gold Scholar</strong> - Level 24</p>
+                </div>
+                <div class="progress"><span></span></div>
+            </div>
+            <div class="welcome-right">
+                <div class="stat-tile">
+                    <small>Total Quizzes</small>
+                    <strong id="totalQuizzes">0</strong>
+                </div>
+                <div class="stat-tile">
+                    <small>Avg Score</small>
+                    <strong id="avgScore">--</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="search-row">
+                <div class="search-bar">
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"></circle>
+                        <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                    </svg>
+                    <input id="searchInput" type="text" placeholder="Search for subjects, topics, or skills...">
+                </div>
+                <div class="chip-row" id="chipRow">
+                    <button class="chip active" data-filter="all">All</button>
+                    <button class="chip" data-filter="science">Science</button>
+                    <button class="chip" data-filter="tech">Tech</button>
+                    <button class="chip" data-filter="arts">Arts</button>
+                    <button class="chip" data-filter="business">Business</button>
+                </div>
+            </div>
+
+            <div id="loading" class="text-center muted">Loading subjects...</div>
+            <div id="subjectGrid" class="subject-grid hidden"></div>
+        </section>
+    </main>
 
     <script src="js/app.js"></script>
     <script>
-        checkAuth(); // Ensure user is logged in
+        checkAuth();
 
         const user = JSON.parse(localStorage.getItem('user'));
-        document.getElementById('userName').textContent = user.name;
+        const userName = user ? user.name : 'User';
+        document.getElementById('userName').textContent = userName;
+        document.getElementById('welcomeName').textContent = userName;
+        document.getElementById('avatarInitials').textContent = userName
+            .split(' ')
+            .map(part => part[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase();
 
         document.getElementById('logoutBtn').addEventListener('click', (e) => {
             e.preventDefault();
             logout();
         });
 
+        const palette = [
+            { bg: '#e8f0ff', color: '#2f5bff' },
+            { bg: '#e8fff6', color: '#16c1a6' },
+            { bg: '#fff2e2', color: '#ff8a00' },
+            { bg: '#f2e8ff', color: '#7b3ff2' },
+            { bg: '#e8f7ff', color: '#1d9bf0' },
+            { bg: '#ffe9ef', color: '#ff4d6d' },
+            { bg: '#eef2f7', color: '#475569' },
+            { bg: '#eafff3', color: '#00b894' },
+            { bg: '#fff6e7', color: '#b45309' },
+            { bg: '#f2f3ff', color: '#4f46e5' }
+        ];
+
+        const iconSet = [
+            '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 6h16v12H4z" fill="currentColor" opacity="0.2"></path><path d="M7 6v12M17 6v12" stroke="currentColor" stroke-width="2"></path></svg>',
+            '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 4l6 4v8l-6 4-6-4V8z" fill="currentColor" opacity="0.2"></path><path d="M6 8l6 4 6-4" stroke="currentColor" stroke-width="2" fill="none"></path></svg>',
+            '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 19h14M7 17l5-10 5 10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"></path></svg>',
+            '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="2" fill="none"></circle><path d="M3 12h18" stroke="currentColor" stroke-width="2"></path></svg>',
+            '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3l2 5h5l-4 3 2 5-5-3-5 3 2-5-4-3h5z" fill="currentColor"></path></svg>'
+        ];
+
+        const descriptions = [
+            'Explore foundations and core principles with guided quizzes.',
+            'Strengthen problem-solving skills and analytical thinking.',
+            'Track mastery with quick practice sets and challenges.',
+            'Build confidence through step-by-step topic progression.',
+            'Advance with curated questions and smart feedback.'
+        ];
+
+        let allSubjects = [];
+
+        function getCategory(name) {
+            const n = name.toLowerCase();
+            if (n.includes('art') || n.includes('history') || n.includes('literature')) return 'arts';
+            if (n.includes('econom') || n.includes('business') || n.includes('management')) return 'business';
+            if (n.includes('program') || n.includes('computer') || n.includes('algo') || n.includes('tech')) return 'tech';
+            return 'science';
+        }
+
+        function renderSubjects(list) {
+            const grid = document.getElementById('subjectGrid');
+            grid.innerHTML = '';
+
+            list.forEach((subject, index) => {
+                const theme = palette[index % palette.length];
+                const desc = descriptions[index % descriptions.length];
+                const icon = iconSet[index % iconSet.length];
+                const quizCount = 8 + ((index * 3) % 23);
+
+                const card = document.createElement('div');
+                card.className = 'subject-tile';
+                card.dataset.name = subject.subject_name.toLowerCase();
+                card.dataset.category = getCategory(subject.subject_name);
+                card.innerHTML = `
+                    <div class="tile-icon" style="background:${theme.bg};color:${theme.color};">
+                        ${icon}
+                    </div>
+                    <div class="tile-title">${subject.subject_name}</div>
+                    <div class="tile-meta">${desc}</div>
+                    <div class="badge">${quizCount} Quizzes</div>
+                    <button class="btn btn-outline">Start Quiz</button>
+                `;
+
+                card.querySelector('button').addEventListener('click', () => {
+                    window.location.href = `quiz.html?id=${subject.quiz_id}&name=${encodeURIComponent(subject.subject_name)}`;
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        function filterSubjects() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const activeChip = document.querySelector('.chip.active');
+            const category = activeChip ? activeChip.dataset.filter : 'all';
+
+            const filtered = allSubjects.filter(subject => {
+                const matchesSearch = subject.subject_name.toLowerCase().includes(query);
+                const matchesCategory = category === 'all' || getCategory(subject.subject_name) === category;
+                return matchesSearch && matchesCategory;
+            });
+
+            renderSubjects(filtered);
+        }
+
         async function fetchSubjects() {
             try {
-                const res = await fetch('http://localhost:5000/quizzes');
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 6000);
+                const res = await fetch(`${window.API_BASE}/quizzes`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!res.ok) {
+                    throw new Error('Bad response');
+                }
                 const subjects = await res.json();
+                allSubjects = subjects;
 
-                const grid = document.getElementById('subjectGrid');
                 document.getElementById('loading').classList.add('hidden');
-                grid.classList.remove('hidden');
+                document.getElementById('subjectGrid').classList.remove('hidden');
+                document.getElementById('totalQuizzes').textContent = subjects.length;
 
-                const colors = ['#e0e7ff', '#dcfce7', '#fef3c7', '#fee2e2', '#f3e8ff', '#ffedd5', '#ecfeff', '#fce7f3', '#f1f5f9', '#dbeafe'];
-
-                subjects.forEach((subject, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'subject-card';
-                    card.style.backgroundColor = colors[index % colors.length];
-
-                    const title = document.createElement('h3');
-                    title.textContent = subject.subject_name;
-                    title.style.marginBottom = '1rem';
-                    title.style.color = '#111827';
-
-                    const btn = document.createElement('button');
-                    btn.className = 'btn';
-                    btn.textContent = 'Start Quiz';
-                    btn.onclick = () => {
-                        window.location.href = `quiz.html?id=${subject.quiz_id}&name=${encodeURIComponent(subject.subject_name)}`;
-                    };
-
-                    card.appendChild(title);
-                    card.appendChild(btn);
-                    grid.appendChild(card);
-                });
+                renderSubjects(subjects);
+                filterSubjects();
             } catch (err) {
                 console.error(err);
-                document.getElementById('loading').textContent = 'Failed to load subjects.';
+                const loading = document.getElementById('loading');
+                loading.textContent = `Failed to load subjects. Start the backend at ${window.API_BASE}`;
             }
         }
 
+        async function fetchAverageScore() {
+            if (!user || !user.id) return;
+            try {
+                const res = await fetch(`${window.API_BASE}/results/${user.id}`);
+                const results = await res.json();
+                if (Array.isArray(results) && results.length > 0) {
+                    const total = results.reduce((sum, item) => sum + Number(item.score || 0), 0);
+                    const average = Math.round((total / results.length) * 10) / 10;
+                    document.getElementById('avgScore').textContent = `${average}`;
+                    return;
+                }
+                document.getElementById('avgScore').textContent = '0';
+            } catch (err) {
+                document.getElementById('avgScore').textContent = '92%';
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('input', filterSubjects);
+        document.getElementById('chipRow').addEventListener('click', (event) => {
+            if (event.target.classList.contains('chip')) {
+                document.querySelectorAll('.chip').forEach(chip => chip.classList.remove('active'));
+                event.target.classList.add('active');
+                filterSubjects();
+            }
+        });
+
         fetchSubjects();
+        fetchAverageScore();
     </script>
 </body>
-
 </html>
